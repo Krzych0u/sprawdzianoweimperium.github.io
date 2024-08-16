@@ -1,11 +1,13 @@
 <!DOCTYPE html>
 <html lang="pl">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Witamy!</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
+
 <body class="bg-gray-100 flex items-center justify-center min-h-screen">
     <div id="content" class="text-center p-6 bg-white rounded-lg shadow-lg max-w-lg">
         <!-- Tutaj dynamicznie wstawimy treść -->
@@ -13,21 +15,26 @@
 
     <script>
         function isTor() {
-            // Proste sprawdzenie, czy użytkownik korzysta z sieci Tor (na podstawie przekaźników DNS używanych przez Tor)
-            return new Promise((resolve, reject) => {
-                fetch('https://check.torproject.org/api/ip')
-                    .then(response => response.json())
-                    .then(data => {
-                        resolve(data['IsTor']);
-                    })
-                    .catch(error => {
-                        console.error('Błąd sprawdzania sieci Tor:', error);
-                        resolve(false);
-                    });
-            });
+            // Sprawdzanie obecności nagłówka "Via" oraz "X-Tor-Exit-Node", które są charakterystyczne dla połączeń Tor.
+            let isUsingTor = false;
+
+            try {
+                // Testowa funkcja wysyłająca zapytanie HTTP HEAD do własnego serwera (bez treści) - bardziej niezawodna metoda.
+                fetch(window.location.href, { method: 'HEAD' }).then(response => {
+                    // W przypadku wykrycia nagłówka Via lub X-Tor-Exit-Node oznacza, że prawdopodobnie jesteśmy w sieci Tor
+                    isUsingTor = response.headers.has('Via') || response.headers.has('X-Tor-Exit-Node');
+                    updateContent(isUsingTor);
+                }).catch(() => {
+                    // Jeśli nie można nawiązać połączenia, traktujemy to jakby użytkownik nie był w Torze
+                    updateContent(false);
+                });
+            } catch (error) {
+                // Jeśli coś poszło nie tak, zakładamy brak połączenia z siecią Tor
+                updateContent(false);
+            }
         }
 
-        isTor().then(isTorUser => {
+        function updateContent(isTorUser) {
             const contentDiv = document.getElementById('content');
             if (isTorUser) {
                 contentDiv.innerHTML = `
@@ -41,15 +48,19 @@
                         <p class="mb-4">Aby uzyskać dostęp do stron w sieci Tor (.onion), wykonaj poniższe kroki:</p>
                         <ol class="list-decimal list-inside mb-4">
                             <li>Pobierz i zainstaluj przeglądarkę Tor z oficjalnej strony: <a href="https://www.torproject.org/" class="text-blue-500 underline" target="_blank" rel="noopener noreferrer">torproject.org</a>.</li>
-                            <li>Uruchom przeglądarkę Tor i połącz się z siecią tor.</li>
-                            <li>Wejdź na tą stronę ponownie i powinieneś zobaczyć przycisk którzy przekieruje cie na strone docelową.</li>
+                            <li>Uruchom przeglądarkę Tor i połącz się z siecią Tor.</li>
+                            <li>Wejdź na tę stronę ponownie i powinieneś zobaczyć przycisk, który przekieruje Cię na stronę docelową.</li>
                         </ol>
                         <p class="font-bold">Uwaga:</p>
                         <p>Strony .onion działają tylko w sieci Tor, więc musisz korzystać z przeglądarki Tor, aby je odwiedzić.</p>
                     </div>
                 `;
             }
-        });
+        }
+
+        // Wywołaj funkcję sprawdzającą po załadowaniu strony
+        isTor();
     </script>
 </body>
+
 </html>
