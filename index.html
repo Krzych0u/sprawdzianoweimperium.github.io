@@ -3,10 +3,53 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Moja Strona na GitHub Pages</title>
+    <title>Witamy!</title>
+    <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body>
-    <h1>Witaj na mojej stronie!</h1>
-    <p>To jest moja pierwsza strona hostowana za pomocą GitHub Pages.</p>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen">
+    <div id="content" class="text-center p-6 bg-white rounded-lg shadow-lg max-w-lg">
+        <!-- Tutaj dynamicznie wstawimy treść -->
+    </div>
+
+    <script>
+        function isTor() {
+            // Proste sprawdzenie, czy użytkownik korzysta z sieci Tor (na podstawie przekaźników DNS używanych przez Tor)
+            return new Promise((resolve, reject) => {
+                fetch('https://check.torproject.org/api/ip')
+                    .then(response => response.json())
+                    .then(data => {
+                        resolve(data['IsTor']);
+                    })
+                    .catch(error => {
+                        console.error('Błąd sprawdzania sieci Tor:', error);
+                        resolve(false);
+                    });
+            });
+        }
+
+        isTor().then(isTorUser => {
+            const contentDiv = document.getElementById('content');
+            if (isTorUser) {
+                contentDiv.innerHTML = `
+                    <h1 class="text-4xl font-bold text-red-500 mb-6">Kliknij tutaj, aby przejść na stronę</h1>
+                    <a href="https://www.google.com" class="bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600 transition">Przejdź na Google</a>
+                `;
+            } else {
+                contentDiv.innerHTML = `
+                    <h1 class="text-4xl font-bold text-red-500 mb-6">Jak uzyskać dostęp do stron .onion</h1>
+                    <div class="text-left text-gray-700">
+                        <p class="mb-4">Aby uzyskać dostęp do stron w sieci Tor (.onion), wykonaj poniższe kroki:</p>
+                        <ol class="list-decimal list-inside mb-4">
+                            <li>Pobierz i zainstaluj przeglądarkę Tor z oficjalnej strony: <a href="https://www.torproject.org/" class="text-blue-500 underline" target="_blank" rel="noopener noreferrer">torproject.org</a>.</li>
+                            <li>Uruchom przeglądarkę Tor.</li>
+                            <li>Wprowadź adres strony .onion w pasku adresu przeglądarki Tor.</li>
+                        </ol>
+                        <p class="font-bold">Uwaga:</p>
+                        <p>Strony .onion działają tylko w sieci Tor, więc musisz korzystać z przeglądarki Tor, aby je odwiedzić.</p>
+                    </div>
+                `;
+            }
+        });
+    </script>
 </body>
 </html>
