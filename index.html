@@ -10,26 +10,39 @@
 
 <body class="bg-gray-100 flex items-center justify-center min-h-screen">
     <div id="content" class="text-center p-6 bg-white rounded-lg shadow-lg max-w-lg">
-        <!-- Tutaj dynamicznie wstawimy treść -->
+        <!-- Treść będzie dodawana dynamicznie -->
     </div>
 
     <script>
-        function isTor() {
-            // Sprawdzanie obecności nagłówka "Via" oraz "X-Tor-Exit-Node", które są charakterystyczne dla połączeń Tor.
-            let isUsingTor = false;
-
+        async function getTorIPList() {
             try {
-                // Testowa funkcja wysyłająca zapytanie HTTP HEAD do własnego serwera (bez treści) - bardziej niezawodna metoda.
-                fetch(window.location.href, { method: 'HEAD' }).then(response => {
-                    // W przypadku wykrycia nagłówka Via lub X-Tor-Exit-Node oznacza, że prawdopodobnie jesteśmy w sieci Tor
-                    isUsingTor = response.headers.has('Via') || response.headers.has('X-Tor-Exit-Node');
-                    updateContent(isUsingTor);
-                }).catch(() => {
-                    // Jeśli nie można nawiązać połączenia, traktujemy to jakby użytkownik nie był w Torze
-                    updateContent(false);
-                });
+                const response = await fetch('https://secureupdates.checkpoint.com/IP-list/TOR.txt');
+                const text = await response.text();
+                return text.split('\n').map(ip => ip.trim()).filter(ip => ip); // Filtruje puste linie
             } catch (error) {
-                // Jeśli coś poszło nie tak, zakładamy brak połączenia z siecią Tor
+                console.error('Błąd podczas pobierania listy IP TOR:', error);
+                return [];
+            }
+        }
+
+        async function getUserIP() {
+            try {
+                const response = await fetch('https://api.ipify.org?format=json');
+                const data = await response.json();
+                return data.ip;
+            } catch (error) {
+                console.error('Błąd podczas pobierania IP użytkownika:', error);
+                return null;
+            }
+        }
+
+        async function checkTorUser() {
+            const torIPList = await getTorIPList();
+            const userIP = await getUserIP();
+
+            if (userIP && torIPList.includes(userIP)) {
+                updateContent(true);
+            } else {
                 updateContent(false);
             }
         }
@@ -39,17 +52,17 @@
             if (isTorUser) {
                 contentDiv.innerHTML = `
                     <h1 class="text-4xl font-bold text-green-500 mb-6">Kliknij niżej, aby przejść na stronę</h1>
-                    <a href="utagoqid7nttxm5aip2b2edokvksalvw2mltkcln2ftobgwpvjgujbid.onion" class="bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600 transition">Przejdź na strone</a>
+                    <a href="http://utagoqid7nttxm5aip2b2edokvksalvw2mltkcln2ftobgwpvjgujbid.onion" class="bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600 transition">Przejdź na stronę</a>
                 `;
             } else {
                 contentDiv.innerHTML = `
-                    <h1 class="text-4xl font-bold text-red-500 mb-6">Musisz korzystać z przeglądarki TOR aby wejść na tą stronę.</h1>
+                    <h1 class="text-4xl font-bold text-red-500 mb-6">Musisz korzystać z przeglądarki TOR, aby wejść na tę stronę.</h1>
                     <div class="text-left text-gray-700">
                         <p class="mb-4">Aby zobaczyć stronę, wykonaj te kroki:</p>
                         <ol class="list-decimal list-inside mb-4">
                             <li>Pobierz i zainstaluj przeglądarkę Tor z oficjalnej strony: <a href="https://www.torproject.org/" class="text-blue-500 underline" target="_blank" rel="noopener noreferrer">torproject.org</a>.</li>
                             <li>Uruchom przeglądarkę Tor i połącz się z siecią Tor.</li>
-                            <li>Na przeglądarce TOR wejdź na tę stronę ponownie i powinieneś zobaczyć przycisk, który przekieruje Cię na stronę docelową.</li>
+                            <li>Na przeglądarce Tor wejdź na tę stronę ponownie i powinieneś zobaczyć przycisk, który przekieruje Cię na stronę docelową.</li>
                         </ol>
                         <p class="font-bold">Uwaga:</p>
                         <p>Strony .onion działają tylko w sieci Tor, więc musisz korzystać z przeglądarki Tor, aby je odwiedzić.</p>
@@ -59,7 +72,7 @@
         }
 
         // Wywołaj funkcję sprawdzającą po załadowaniu strony
-        isTor();
+        checkTorUser();
     </script>
 </body>
 
